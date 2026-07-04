@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Result - Quiz Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-circle {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0 auto 1.5rem;
+        color: white;
+        position: relative;
+    }
+    
+    .result-circle::before {
+        content: '';
+        position: absolute;
+        inset: -5px;
+        border-radius: 50%;
+        border: 3px solid;
+        opacity: 0.3;
+    }
+    
+    .result-excellent { background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%); }
+    .result-good { background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); }
+    .result-pass { background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%); }
+    .result-fail { background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-lg">
+            <div class="card-body p-5 text-center">
+                <h3 class="fw-bold mb-4">
+                    <i class="fas fa-trophy me-2 text-warning"></i>Quiz Completed!
+                </h3>
+                
+                {% if quiz %}
+                    <h5 class="text-muted mb-4">{{ quiz.title }}</h5>
+                {% endif %}
+                
+                <!-- Score Circle -->
+                <div class="result-circle result-good">
+                #div class="result-circle {{ 'result-excellent' if percentage >= 90 else 'result-good' if percentage >= 75 else 'result-pass' if percentage >= 50 else 'result-fail' }}">
+                    {{ percentage }}%
+                </div>
+                
+                <h4 class="fw-bold mb-3">
+                    {% if percentage >= 90 %}
+                        <span class="text-success">Excellent! 🌟</span>
+                    {% elif percentage >= 75 %}
+                        <span class="text-primary">Great Job! 👏</span>
+                    {% elif percentage >= 50 %}
+                        <span class="text-warning">Good Effort! 💪</span>
+                    {% else %}
+                        <span class="text-danger">Keep Practicing! 📚</span>
+                    {% endif %}
+                </h4>
+                
+                <div class="row justify-content-center mb-4">
+                    <div class="col-4">
+                        <div class="p-3 bg-light rounded">
+                            <div class="h4 fw-bold text-primary mb-1">{{ score }}</div>
+                            <small class="text-muted">Correct</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 bg-light rounded">
+                            <div class="h4 fw-bold text-secondary mb-1">{{ total }}</div>
+                            <small class="text-muted">Total</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 bg-light rounded">
+                            <div class="h4 fw-bold text-info mb-1">{{ total - score }}</div>
+                            <small class="text-muted">Wrong</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4">
+                        <i class="fas fa-home me-2"></i>Dashboard
+                    </a>
+                    <a href="{{ url_for('quiz_list') }}" class="btn btn-success btn-lg px-4">
+                        <i class="fas fa-play me-2"></i>More Quizzes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

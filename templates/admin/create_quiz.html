@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Create Quiz - Admin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-lg">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-plus-circle me-2 text-success"></i>Create New Quiz
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('create_quiz') }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-heading me-2"></i>Quiz Title
+                        </label>
+                        <input type="text" name="title" class="form-control form-control-lg" 
+                               placeholder="e.g., Python Basics" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-align-left me-2"></i>Description
+                        </label>
+                        <textarea name="description" class="form-control" rows="3" 
+                                  placeholder="Brief description of the quiz"></textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-clock me-2"></i>Time Limit (minutes)
+                        </label>
+                        <input type="number" name="time_limit" class="form-control" 
+                               value="10" min="1" max="120" required>
+                        <small class="text-muted">Students must complete within this time</small>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-arrow-right me-2"></i>Create Quiz & Add Questions
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

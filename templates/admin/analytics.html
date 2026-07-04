@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Admin{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold">
+            <i class="fas fa-chart-bar me-2 text-primary"></i>Quiz Analytics
+        </h2>
+        <p class="text-muted">Performance insights and statistics</p>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Quiz Performance Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="quizStatsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy me-2 text-warning"></i>Top Students</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="topStudentsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quiz Stats Table -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-table me-2"></i>Detailed Quiz Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Quiz</th>
+                                <th>Attempts</th>
+                                <th>Avg Score</th>
+                                <th>Avg %</th>
+                                <th>Highest</th>
+                                <th>Lowest</th>
+                                <th>Pass Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for quiz_title, stats in quiz_stats.items() %}
+                                <tr>
+                                    <td class="fw-bold">{{ quiz_title }}</td>
+                                    <td>{{ stats.total_attempts }}</td>
+                                    <td>{{ stats.average_score }}/{{ stats.total_questions }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-primary" 
+                                                 style="width: {{ stats.average_percentage }}%"></div>
+                                        </div>
+                                        <small>{{ stats.average_percentage }}%</small>
+                                    </td>
+                                    <td class="text-success fw-bold">{{ stats.highest_score }}</td>
+                                    <td class="text-danger fw-bold">{{ stats.lowest_score }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if stats.pass_percentage >= 70 else 'warning' if stats.pass_percentage >= 50 else 'danger' }}">
+                                            {{ stats.pass_percentage }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">No data available</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Students Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-star me-2 text-warning"></i>Top Performing Students</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Student</th>
+                                <th>Average Percentage</th>
+                                <th>Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in top_students %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{{ 'warning' if loop.index == 1 else 'secondary' }} fs-6">
+                                            #{{ loop.index }}
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold">{{ student.username }}</td>
+                                    <td class="h5 text-primary mb-0">{{ student.average_percentage }}%</td>
+                                    <td>
+                                        <div class="progress" style="height: 10px;">
+                                            <div class="progress-bar bg-{{ 'success' if student.average_percentage >= 80 else 'warning' if student.average_percentage >= 60 else 'danger' }}" 
+                                                 style="width: {{ student.average_percentage }}%"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">No data available</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Quiz Stats Chart
+    const quizStatsCtx = document.getElementById('quizStatsChart').getContext('2d');
+    const quizStatsChart = new Chart(quizStatsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ quiz_stats.keys()|list|tojson }},
+            datasets: [{
+                label: 'Average Score (%)',
+                data: {{ quiz_stats.values()|map(attribute='average_percentage')|list|tojson }},
+                backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 2,
+                borderRadius: 8
+            }, {
+                label: 'Pass Rate (%)',
+                data: {{ quiz_stats.values()|map(attribute='pass_percentage')|list|tojson }},
+                backgroundColor: 'rgba(28, 200, 138, 0.8)',
+                borderColor: 'rgba(28, 200, 138, 1)',
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            }
+        }
+    });
+
+    // Top Students Chart
+    const topStudentsCtx = document.getElementById('topStudentsChart').getContext('2d');
+    const topStudentsChart = new Chart(topStudentsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ top_students|map(attribute='username')|list|tojson }},
+            datasets: [{
+                data: {{ top_students|map(attribute='average_percentage')|list|tojson }},
+                backgroundColor: [
+                    'rgba(246, 194, 62, 0.8)',
+                    'rgba(78, 115, 223, 0.8)',
+                    'rgba(28, 200, 138, 0.8)',
+                    'rgba(231, 74, 59, 0.8)',
+                    'rgba(133, 135, 150, 0.8)'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

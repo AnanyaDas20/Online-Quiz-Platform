@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}All Results - Admin{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold">
+            <i class="fas fa-list me-2 text-primary"></i>All Quiz Results
+        </h2>
+        <p class="text-muted">Complete history of all student attempts</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-lg">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-table me-2"></i>Results</h5>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-arrow-left me-1"></i>Back
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Student</th>
+                                <th>Quiz</th>
+                                <th>Score</th>
+                                <th>Percentage</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results %}
+                                <tr>
+                                    <td>{{ result.id }}</td>
+                                    <td class="fw-bold">{{ result.username }}</td>
+                                    <td>{{ result.quiz_title }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ result.score }}/{{ result.total_questions }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px; width: 100px;">
+                                                <div class="progress-bar bg-{{ 'success' if result.percentage >= 80 else 'warning' if result.percentage >= 50 else 'danger' }}" 
+                                                     style="width: {{ result.percentage }}%"></div>
+                                            </div>
+                                            <span class="fw-bold">{{ result.percentage }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if result.percentage >= 50 else 'danger' }}">
+                                            {{ 'PASS' if result.percentage >= 50 else 'FAIL' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ result.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                        </small>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-5">
+                                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                                        <p>No results found</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

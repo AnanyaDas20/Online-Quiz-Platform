@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}{{ quiz.title }} - Quiz{% endblock %}
+
+{% block extra_css %}
+<style>
+    .quiz-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .question-card {
+        background: #fff;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+    }
+    
+    .question-number {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        margin-right: 1rem;
+    }
+    
+    .option-label {
+        display: block;
+        padding: 1rem 1.5rem;
+        border: 2px solid #e3e6f0;
+        border-radius: 12px;
+        margin-bottom: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .option-label:hover {
+        border-color: #4e73df;
+        background-color: #f8f9fc;
+    }
+    
+    .option-input:checked + .option-label {
+        border-color: #4e73df;
+        background-color: #eaecf4;
+        font-weight: 600;
+    }
+    
+    .sticky-timer {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 1000;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <!-- Timer -->
+    <div class="sticky-timer">
+        <div class="timer-box" id="timer">
+            <i class="fas fa-clock me-2"></i>
+            <span id="time-display">00:00</span>
+        </div>
+    </div>
+
+    <!-- Quiz Header -->
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">{{ quiz.title }}</h2>
+        <p class="text-muted">{{ quiz.description }}</p>
+        <div class="badge bg-info fs-6">
+            <i class="fas fa-question-circle me-1"></i>{{ questions|length }} Questions
+        </div>
+    </div>
+
+    <!-- Quiz Form -->
+    <form method="POST" action="{{ url_for('start_quiz', quiz_id=quiz.id) }}" id="quiz-form">
+        {% for question in questions %}
+            <div class="question-card">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="question-number">{{ loop.index }}</div>
+                    <h5 class="mb-0 fw-bold">{{ question.question_text }}</h5>
+                </div>
+                
+                <div class="options">
+                    <div class="mb-2">
+                        <input type="radio" name="{{ question.id }}" value="A" id="q{{ question.id }}_A" class="option-input" required>
+                        <label for="q{{ question.id }}_A" class="option-label">
+                            <strong class="me-2 text-primary">A.</strong> {{ question.option_a }}
+                        </label>
+                    </div>
+                    <div class="mb-2">
+                        <input type="radio" name="{{ question.id }}" value="B" id="q{{ question.id }}_B" class="option-input">
+                        <label for="q{{ question.id }}_B" class="option-label">
+                            <strong class="me-2 text-primary">B.</strong> {{ question.option_b }}
+                        </label>
+                    </div>
+                    <div class="mb-2">
+                        <input type="radio" name="{{ question.id }}" value="C" id="q{{ question.id }}_C" class="option-input">
+                        <label for="q{{ question.id }}_C" class="option-label">
+                            <strong class="me-2 text-primary">C.</strong> {{ question.option_c }}
+                        </label>
+                    </div>
+                    <div class="mb-2">
+                        <input type="radio" name="{{ question.id }}" value="D" id="q{{ question.id }}_D" class="option-input">
+                        <label for="q{{ question.id }}_D" class="option-label">
+                            <strong class="me-2 text-primary">D.</strong> {{ question.option_d }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+        <div class="text-center mt-4 mb-5">
+            <button type="submit" class="btn btn-primary btn-lg px-5" id="submit-btn">
+                <i class="fas fa-paper-plane me-2"></i>Submit Quiz
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Auto-submit Modal -->
+<div class="modal fade" id="timeUpModal" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Time's Up!</h5>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-clock fa-4x text-danger mb-3"></i>
+                <h4>Your time has expired!</h4>
+                <p class="text-muted">Your quiz is being submitted automatically...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Timer Configuration
+    const timeLimit = {{ quiz.time_limit }}; // minutes from database
+    const timeLimitSeconds = timeLimit * 60;
+    let remainingTime = timeLimitSeconds;
+    
+    const timerDisplay = document.getElementById('time-display');
+    const timerBox = document.getElementById('timer');
+    const quizForm = document.getElementById('quiz-form');
+    const timeUpModal = new bootstrap.Modal(document.getElementById('timeUpModal'));
+    
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    function updateTimer() {
+        timerDisplay.textContent = formatTime(remainingTime);
+        
+        // Visual warnings
+        if (remainingTime <= 60) { // Last 1 minute
+            timerBox.classList.add('danger');
+            timerBox.classList.remove('warning');
+        } else if (remainingTime <= 300) { // Last 5 minutes
+            timerBox.classList.add('warning');
+        }
+        
+        if (remainingTime <= 0) {
+            clearInterval(timerInterval);
+            timeUpModal.show();
+            // Auto-submit after 2 seconds
+            setTimeout(() => {
+                quizForm.submit();
+            }, 2000);
+        }
+        
+        remainingTime--;
+    }
+    
+    // Start timer immediately
+    updateTimer();
+    const timerInterval = setInterval(updateTimer, 1000);
+    
+    // Warning before leaving page
+    window.addEventListener('beforeunload', (e) => {
+        if (remainingTime > 0) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+    
+    // Prevent accidental form submission
+    quizForm.addEventListener('submit', (e) => {
+        const unanswered = document.querySelectorAll('.question-card').length - 
+                          document.querySelectorAll('input[type="radio"]:checked').length;
+        if (unanswered > 0) {
+            if (!confirm(`You have ${unanswered} unanswered question(s). Are you sure you want to submit?`)) {
+                e.preventDefault();
+            }
+        }
+    });
+</script>
+{% endblock %}
